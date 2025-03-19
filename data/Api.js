@@ -1,36 +1,29 @@
 import axios from "axios";
-const API_BASE_URL = "https://pokeapi.co/api/v2/pokemon/?limit=100";
 
-const apiService = {
-  getPokemon: async () => {
-    try {
-      const response = await axios.get(API_BASE_URL);
-      const results = response.data.results;
+const limit = 20;
 
-      
-      const detailedPokemon = await Promise.all(
-        results.map(async (pokemon) => {
-          const details = await axios.get(pokemon.url);
-          const data =details.data;
-          return {
-            id: data.id,
-            name: data.name,
-            sprites: data.sprites, 
-          };
-        })
-      );
-
-      return {
-        success: true,
-        data: detailedPokemon,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
-  },
+export const fetchPokemonData = async (currentPage) => {
+  try {
+    const response = await axios.get(
+      `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${
+        (currentPage - 1) * limit
+      }`
+    );
+    const detailedData = await Promise.all(
+      response.data.results.map(async (pokemon, index) => {
+        const detailedResponse = await axios.get(pokemon.url);
+        return {
+          ...pokemon,
+          id: detailedResponse.data.id,
+        };
+      })
+    );
+    return{
+    pokemon:detailedData,
+    totalpages:Math.ceil(response.data.count / limit)};
+  } catch (error) {
+    console.log("Error fetching Pokemon:", error);
+  } 
 };
 
-export default apiService;
+
